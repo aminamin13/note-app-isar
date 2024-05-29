@@ -6,22 +6,26 @@ import 'package:path_provider/path_provider.dart';
 class NoteDatabase extends ChangeNotifier {
   static late Isar isar;
 
+
   // initialize database
-  static Future<void> initilize() async {
+  static Future<void> initialize() async {
     final dir = await getApplicationDocumentsDirectory();
     isar = await Isar.open([NoteSchema], directory: dir.path);
   }
 
-  final List<Note> currentNotes = [];
+   List<Note> currentNotes = [];
+  
 
   // create
   Future<void> addNote(String textFromUser) async {
     // create new note object
-
     final newNote = Note()..text = textFromUser;
 
 // save to database
-    await isar.writeTxn(() => isar.notes.put(newNote));
+    await isar.writeTxn(() async {
+      await isar.notes.put(newNote);
+    });
+    await fetchNotes();
   }
 
   // read
@@ -30,7 +34,6 @@ class NoteDatabase extends ChangeNotifier {
     List<Note> fetchedNotes = await isar.notes.where().findAll();
     currentNotes.clear();
     currentNotes.addAll(fetchedNotes);
-
     notifyListeners();
   }
 
@@ -41,7 +44,9 @@ class NoteDatabase extends ChangeNotifier {
 
     if (existingNote != null) {
       existingNote.text = newText;
-      await isar.writeTxn(() => isar.notes.put(existingNote));
+      await isar.writeTxn(() async {
+        await isar.notes.put(existingNote);
+      });
       await fetchNotes();
     }
   }
@@ -49,8 +54,9 @@ class NoteDatabase extends ChangeNotifier {
   // delete
 
   Future<void> deleteNote(int id) async {
-    await isar.writeTxn(() => isar.notes.delete(id));
+    await isar.writeTxn(() async {
+      await isar.notes.delete(id);
+    });
     await fetchNotes();
   }
-
 }
